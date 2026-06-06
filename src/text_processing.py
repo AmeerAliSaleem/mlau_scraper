@@ -3,7 +3,10 @@ import demoji
 import spacy
 from substack_api import Post
 
-def filter_post_html(post: Post, strings_to_remove: list[str]) -> str:
+def filter_post_html(
+        post: Post,
+        strings_to_remove: list[str]
+) -> str:
     """
     Cleans the HTML of the given post from the ML Algorithms Unpacked newsletter. Namely:
     * Converting all text to lowercase

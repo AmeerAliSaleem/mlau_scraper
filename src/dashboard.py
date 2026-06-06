@@ -26,7 +26,10 @@ def load_newsletter_data(newsletter_url: str) -> tuple[list[Post], list[Post]]:
     return top_posts, recent_posts
 
 @st.cache_data
-def load_category_metadata(category_name: str, return_num: int = 0) -> list[dict]:
+def load_category_metadata(
+        category_name: str,
+        return_num: int = 0
+) -> list[dict]:
     category = Category(name=category_name)
     # newsletters = category.get_newsletters()
     newsletters_metadata = category.get_newsletter_metadata()
@@ -36,7 +39,10 @@ def load_category_metadata(category_name: str, return_num: int = 0) -> list[dict
     else:
         return newsletters_metadata
 
-def word_frequency_plot(word_list: list[str], top_n: int = 10):
+def word_frequency_plot(
+        word_list: list[str],
+        top_n: int = 10
+):
     word_freq = Counter(word_list)
 
     words, counts = zip(*word_freq.most_common(top_n))
