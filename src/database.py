@@ -1,10 +1,11 @@
 import os
 import logging
+import pandas as pd
 from supabase import create_client, Client
 
 logger = logging.getLogger(__name__)
 
-def get_supabase_client():
+def get_supabase_client() -> None | Client:
     """
     Create and return Supabase client from environmental variables.
 
@@ -23,7 +24,7 @@ def get_supabase_client():
 def access_supabase_data():
     pass
 
-def save_to_supabase(df, table_name):
+def save_to_supabase(df: pd.DataFrame, table_name: str) -> None:
     supabase: Client = get_supabase_client()
     if supabase is None:
         raise ValueError("Supabase client not available. Missing environmental variables SUPABASE_URL and/or SUPABASE_KEY")
