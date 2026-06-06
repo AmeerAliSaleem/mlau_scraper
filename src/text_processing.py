@@ -1,3 +1,5 @@
+"""Extracting and cleaning text from HTML posts"""
+
 from bs4 import BeautifulSoup
 import demoji
 import spacy
