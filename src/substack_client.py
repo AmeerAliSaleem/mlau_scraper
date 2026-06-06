@@ -1,9 +1,24 @@
+"""Functions to interact with the Substack API"""
+
 import pandas as pd
 from substack_api import Newsletter, Post, Category
 
+def load_newsletter_data(
+        newsletter_url: str,
+        top_limit: int=5
+) -> tuple[list[Post], list[Post]]:
+    """
+    Loads data on top posts and recent posts from the given newsletter.
+    """
+    newsletter = Newsletter(newsletter_url)
+    top_posts = newsletter.get_posts(sorting="top", limit=top_limit)
+    recent_posts = newsletter.get_posts(sorting="new")
+
+    return top_posts, recent_posts
+
 def newsletters_to_df(newsletters_metadata: list[dict]) -> pd.DataFrame:
     """
-    Extracts useful statistics from the given list of newsletters.
+    Extracts useful statistics from the given list of newsletters (all usually under a common category).
     """
     sorted_newsletters = sorted(
         newsletters_metadata,
@@ -29,6 +44,7 @@ def posts_to_df(posts: list[Post]) -> pd.DataFrame:
     top_titles_metadata = [post.get_metadata() for post in posts]
     top_titles = [
         {
+            'id': metadata['id'],
             'Title': metadata['title'],
             'URL': metadata['canonical_url'],
             'Date of upload': pd.to_datetime(metadata['post_date']),
