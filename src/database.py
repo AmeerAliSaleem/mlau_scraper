@@ -24,7 +24,10 @@ def get_supabase_client() -> None | Client:
 def access_supabase_data():
     pass
 
-def save_to_supabase(df: pd.DataFrame, table_name: str) -> None:
+def save_to_supabase(
+        df: pd.DataFrame,
+        table_name: str
+) -> None:
     supabase: Client = get_supabase_client()
     if supabase is None:
         raise ValueError("Supabase client not available. Missing environmental variables SUPABASE_URL and/or SUPABASE_KEY")
