@@ -20,25 +20,35 @@ import streamlit as st
 st.set_page_config(page_title="Substack Analysis", layout="wide")
 
 # TODO
-# * Update category data loading function
+# Update category data loading function
 
-@st.cache_data
+@st.cache_resource(show_spinner="Loading publication data...")
 def load_newsletter_data(newsletter_url: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Loads data on top posts and recent posts from the given newsletter.
+    Loads data on top posts and all posts from the given newsletter.
     """
     top_posts_str = access_supabase_data('Top posts').model_dump_json()
     top_posts_json = json.loads(top_posts_str)
     top_posts = pd.DataFrame(top_posts_json['data'])
 
-    recent_posts_str = access_supabase_data('All posts').model_dump_json()
-    recent_posts_json = json.loads(recent_posts_str)
-    recent_posts = pd.DataFrame(recent_posts_json['data'])
+    all_posts_str = access_supabase_data('All posts').model_dump_json()
+    all_posts_json = json.loads(all_posts_str)
+    all_posts = pd.DataFrame(all_posts_json['data'])
 
-    return top_posts, recent_posts
+    return top_posts, all_posts
 
-@st.cache_data
-def load_category_metadata( # To move to substack_client
+@st.cache_resource(show_spinner="Loading category...")
+def load_queried_category_metadata(
+    category_name: str,
+    query: str
+):
+    """Loads newsletters in category according to given query"""
+    # TODO
+    # Export query-related data to Supabase (complete export_filtered_category_data())
+    # Read in Supabase contents here
+
+@st.cache_data(show_spinner="Loading category data...")
+def load_category_metadata(
         category_name: str,
         return_num: int = 0
 ) -> list[dict]:
@@ -74,15 +84,14 @@ def run_dashboard() -> None:
     personal_tab, others_tab = st.tabs(['Personal', 'Other'])
 
     with personal_tab:
-        top_posts, recent_posts = load_newsletter_data(
+        top_posts, all_posts = load_newsletter_data(
             newsletter_url="https://ameersaleem.substack.com"
         )
 
         with st.container():
             st.header("Top posts")
 
-            # top_posts_df = posts_to_df(top_posts)
-
+            top_posts = top_posts.drop(columns=['created_at'])
             st.dataframe(
                 top_posts,
                 hide_index=True,
@@ -115,23 +124,23 @@ def run_dashboard() -> None:
         with st.container():
             st.header("Publication stats")
 
-            # recent_posts_df = posts_to_df(recent_posts)
-
             # Extra features
-            recent_posts['Date of upload'] = pd.to_datetime(recent_posts['Date of upload'])
-            recent_posts['Hour of upload'] = recent_posts['Date of upload'].dt.hour
+            all_posts['Date of upload'] = pd.to_datetime(all_posts['Date of upload'])
+            all_posts['Hour of upload'] = all_posts['Date of upload'].dt.hour
 
             # Word counts
-            fig_word_count = px.bar(recent_posts, x='Date of upload', y='Word count', title="Word counts over time")
+            fig_word_count = px.bar(all_posts, x='Date of upload', y='Word count', title="Word counts over time")
             st.plotly_chart(fig_word_count, key="word_count")
 
             # Hour of upload consistency
-            fig_hour = px.bar(recent_posts, x='Date of upload', y='Hour of upload', title="Hour of upload")
+            fig_hour = px.bar(all_posts, x='Date of upload', y='Hour of upload', title="Hour of upload")
             st.plotly_chart(fig_hour, key="hour_of_upload")
 
             st.subheader("Tabular stats")
+
+            all_posts = all_posts.drop(columns=['created_at'])
             st.dataframe(
-                recent_posts,
+                all_posts,
                 hide_index=True,
                 column_config={
                     "URL": st.column_config.LinkColumn(
@@ -153,7 +162,6 @@ def run_dashboard() -> None:
 
             st.dataframe(
                 top_tech_newsletters_df,
-                hide_index=True,
                 column_config={
                     "URL": st.column_config.LinkColumn(
                         label="Newsletter URL",

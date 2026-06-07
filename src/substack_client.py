@@ -8,17 +8,39 @@ def load_newsletter_data(
         top_limit: int=5
 ) -> tuple[list[Post], list[Post]]:
     """
-    Loads data on top posts and recent posts from the given newsletter.
+    Loads data from Substack API on top posts and all posts from the given newsletter.
+
+    Parameters
+    ----------
+    newsletter_url: str
+        The newsletter URL.
+    top_limit: int=5
+        The maximum number of top posts to return.
+
+    Returns
+    ----------
+    top_posts, all_posts: tuple[pd.DataFrame, pd.DataFrame]
+        DataFrames corresponding to the top posts, as well as all posts in reverse chronological order.
     """
     newsletter = Newsletter(newsletter_url)
     top_posts = newsletter.get_posts(sorting="top", limit=top_limit)
-    recent_posts = newsletter.get_posts(sorting="new")
+    all_posts = newsletter.get_posts(sorting="new")
 
-    return top_posts, recent_posts
+    return top_posts, all_posts
 
 def newsletters_to_df(newsletters_metadata: list[dict]) -> pd.DataFrame:
     """
     Extracts useful statistics from the given list of newsletters (all usually under a common category).
+
+    Parameters
+    ----------
+    newsletters_metadata : list[dict]
+        The result of the .get_newsletter_metadata() method applied to a Category object.
+
+    Returns
+    ----------
+    top_newsletters_df: pd.DataFrame
+        Useful stats in DataFrame format.
     """
     sorted_newsletters = sorted(
         newsletters_metadata,
@@ -30,19 +52,81 @@ def newsletters_to_df(newsletters_metadata: list[dict]) -> pd.DataFrame:
         {
             'Name': metadata['name'],
             'URL': metadata['base_url'],
+            'Author': metadata['author_name'],
+            'Author handle': metadata['author_handle'],
             'Subscriber count': metadata['freeSubscriberCount'],
+            'Newsletter creation date': pd.to_datetime(metadata['created_at']),
+            'First post date': pd.to_datetime(metadata['first_post_date']),
+            'Last chat post': pd.to_datetime(metadata['last_chat_post_at'])
         }
         for metadata in sorted_newsletters
     ]
 
-    return pd.DataFrame(top_newsletters)
+    top_newsletters_df = pd.DataFrame(top_newsletters)
+
+    return top_newsletters_df
+
+def filter_newsletters_in_category(
+        category: Category,
+        query: str,
+        limit: int=10,
+):
+    """
+    Searches the category for newsletters filtered by the given query.
+
+    Parameters
+    ----------
+    category: Category
+        The newsletter category to filter.
+    query: str
+        The (non-Regex) search query.
+    limit: int, optional
+        The maximum number of newsletters to search the posts of. Default is 10.
+    
+    Returns
+    ----------
+    filtered_newsletters: list[dict]
+        The newsletters filtered from the query. NB the list is not sorted.
+    """
+    # Filter out invite-only publications to prevent HTTP 403 error
+    category_metadata = category.get_newsletter_metadata()
+    category_metadata = [
+        newsletter for newsletter in category_metadata if newsletter['invite_only']==False
+    ]
+    category_metadata = category_metadata[:limit]
+
+    filtered_newsletter_urls = []
+    for newsletter_dict in category_metadata:
+        url = newsletter_dict['base_url']
+        newsletter = Newsletter(url=url)
+        filtered_posts = newsletter.search_posts(query=query)
+
+        if filtered_posts:
+            filtered_newsletter_urls.append(url)
+
+    # Filter category metadata based on query results
+    filtered_newsletters = list(
+        filter(lambda n: n['base_url'] in filtered_newsletter_urls, category_metadata)
+    )
+
+    return filtered_newsletters
 
 def posts_to_df(posts: list[Post]) -> pd.DataFrame:
     """
     Extracts useful statistics from the list of posts of the given newsletter.
+
+    Parameters
+    ----------
+    posts: list[Post]
+        The list of newsletter posts.
+
+    Returns
+    ----------
+    posts_stats_df: pd.DataFrame
+        The DataFrame containing useful statistics from the posts.
     """
-    top_titles_metadata = [post.get_metadata() for post in posts]
-    top_titles = [
+    posts_metadata = [post.get_metadata() for post in posts]
+    posts_stats = [
         {
             'id': metadata['id'],
             'Title': metadata['title'],
@@ -53,7 +137,9 @@ def posts_to_df(posts: list[Post]) -> pd.DataFrame:
             'Restacks': metadata['restacks'],
             "No. of comments (exc. replies)": metadata['comment_count'] - metadata['child_comment_count']
         }
-        for metadata in top_titles_metadata
+        for metadata in posts_metadata
     ]
 
-    return pd.DataFrame(top_titles)
+    posts_stats_df = pd.DataFrame(posts_stats)
+
+    return posts_stats_df
