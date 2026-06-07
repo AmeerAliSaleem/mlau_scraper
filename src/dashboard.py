@@ -1,6 +1,11 @@
+"""Streamlit webapp"""
+
+import json
 from collections import Counter
+import pandas as pd
 
 from substack_api import Newsletter, Post, Category
+from database import access_supabase_data
 
 # Project files
 from substack_client import newsletters_to_df, posts_to_df
@@ -14,19 +19,26 @@ import streamlit as st
 
 st.set_page_config(page_title="Substack Analysis", layout="wide")
 
+# TODO
+# * Update category data loading function
+
 @st.cache_data
-def load_newsletter_data(newsletter_url: str) -> tuple[list[Post], list[Post]]:
+def load_newsletter_data(newsletter_url: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Loads data on top posts and recent posts from the given newsletter.
     """
-    newsletter = Newsletter(newsletter_url)
-    top_posts = newsletter.get_posts(sorting="top", limit=5)
-    recent_posts = newsletter.get_posts(sorting="new")
+    top_posts_str = access_supabase_data('Top posts').model_dump_json()
+    top_posts_json = json.loads(top_posts_str)
+    top_posts = pd.DataFrame(top_posts_json['data'])
+
+    recent_posts_str = access_supabase_data('All posts').model_dump_json()
+    recent_posts_json = json.loads(recent_posts_str)
+    recent_posts = pd.DataFrame(recent_posts_json['data'])
 
     return top_posts, recent_posts
 
 @st.cache_data
-def load_category_metadata(
+def load_category_metadata( # To move to substack_client
         category_name: str,
         return_num: int = 0
 ) -> list[dict]:
@@ -69,10 +81,10 @@ def run_dashboard() -> None:
         with st.container():
             st.header("Top posts")
 
-            top_posts_df = posts_to_df(top_posts)
+            # top_posts_df = posts_to_df(top_posts)
 
             st.dataframe(
-                top_posts_df,
+                top_posts,
                 hide_index=True,
                 column_config={
                     "URL": st.column_config.LinkColumn(
@@ -84,8 +96,9 @@ def run_dashboard() -> None:
             # Analytics
             st.subheader("Analytics for top post")
 
+            top_post = Post(url=top_posts['URL'][0])
             top_post_text = filter_post_html(
-                post=top_posts[0],
+                post=top_post,
                 strings_to_remove=[
                     "hello fellow machine learners,",
                     "subscribe now",
@@ -102,22 +115,23 @@ def run_dashboard() -> None:
         with st.container():
             st.header("Publication stats")
 
-            recent_posts_df = posts_to_df(recent_posts)
+            # recent_posts_df = posts_to_df(recent_posts)
 
             # Extra features
-            recent_posts_df['Hour of upload'] = recent_posts_df['Date of upload'].dt.hour
+            recent_posts['Date of upload'] = pd.to_datetime(recent_posts['Date of upload'])
+            recent_posts['Hour of upload'] = recent_posts['Date of upload'].dt.hour
 
-            # Time series
-            fig_word_count = px.bar(recent_posts_df, x='Date of upload', y='Word count', title="Word counts over time")
+            # Word counts
+            fig_word_count = px.bar(recent_posts, x='Date of upload', y='Word count', title="Word counts over time")
             st.plotly_chart(fig_word_count, key="word_count")
 
             # Hour of upload consistency
-            fig_hour = px.bar(recent_posts_df, x='Date of upload', y='Hour of upload', title="Hour of upload")
+            fig_hour = px.bar(recent_posts, x='Date of upload', y='Hour of upload', title="Hour of upload")
             st.plotly_chart(fig_hour, key="hour_of_upload")
 
             st.subheader("Tabular stats")
             st.dataframe(
-                recent_posts_df,
+                recent_posts,
                 hide_index=True,
                 column_config={
                     "URL": st.column_config.LinkColumn(
