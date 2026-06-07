@@ -19,9 +19,6 @@ import streamlit as st
 
 st.set_page_config(page_title="Substack Analysis", layout="wide")
 
-# TODO
-# Update category data loading function
-
 @st.cache_resource(show_spinner="Loading publication data...")
 def load_newsletter_data(newsletter_url: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -73,10 +70,26 @@ def word_frequency_plot(
         x = words,
         y=counts,
         labels={"x": "Words", "y": "Frequency"},
-        title=f"Top {top_n} word frequencies"
+        title=f"Top {top_n} word frequencies (lemmatised)"
     )
 
     return fig
+
+def post_eda(top_post: Post):
+    top_post_text = filter_post_html(
+        post=top_post,
+        strings_to_remove=[
+            "hello fellow machine learners,",
+            "subscribe now",
+            "last week,",
+            "this week"
+        ]
+    )
+
+    top_post_text_clean = clean_text(top_post_text)
+
+    fig = word_frequency_plot(top_post_text_clean)
+    st.plotly_chart(fig)
 
 def run_dashboard() -> None:
     st.title("📦 Machine Learning Algorithms Unpacked 📦")
@@ -103,23 +116,17 @@ def run_dashboard() -> None:
             )
 
             # Analytics
-            st.subheader("Analytics for top post")
+            st.subheader("Top post analytics")
 
-            top_post = Post(url=top_posts['URL'][0])
-            top_post_text = filter_post_html(
-                post=top_post,
-                strings_to_remove=[
-                    "hello fellow machine learners,",
-                    "subscribe now",
-                    "last week,",
-                    "this week"
-                ]
+            top_post_title_option = st.selectbox(
+                "Select top post to analyse",
+                top_posts['Title'],
             )
 
-            top_post_text_clean = clean_text(top_post_text)
-
-            fig = word_frequency_plot(top_post_text_clean)
-            st.plotly_chart(fig)
+            top_post = Post(
+                url=top_posts.loc[top_posts['Title'] == top_post_title_option, 'URL'].iat[0],
+            )
+            post_eda(top_post)
 
         with st.container():
             st.header("Publication stats")
