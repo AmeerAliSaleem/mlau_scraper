@@ -1,9 +1,11 @@
 """Save Substack API results to database"""
 
 import datetime
+import pandas as pd
 
-from substack_api import Newsletter
-from substack_client import load_newsletter_data, newsletters_to_df, posts_to_df
+from substack_api import Newsletter, Category
+from substack_client import (load_newsletter_data, newsletters_to_df,
+                             filter_newsletters_in_category, posts_to_df)
 from database import save_to_supabase, clear_supabase
 
 # TODO
@@ -15,6 +17,8 @@ def json_serialisable(obj):
     Convert data types that are incompatible with JSON.
     """
     if isinstance(obj, datetime.datetime):
+        if pd.isnull(obj):
+            return None
         return obj.strftime('%Y-%m-%d %H:%M:%S')
     return obj
 
@@ -48,9 +52,8 @@ def export_newsletter_data() -> None:
 
 def export_filtered_category_data(
     category_name: str,
-    query: str,
-    database_table_name: str
-):
+    query: str
+) -> None:
     """
     A function that:
     # TODO
@@ -58,7 +61,26 @@ def export_filtered_category_data(
     * Filters the results based on the given query
     * Saves the results in the corresponding Supabase table
     """
-    pass
+    database_table_name = f'{category_name.lower()}_{query.replace(' ', '_')}'
+    category = Category(category_name)
+
+    filtered_newsletters = filter_newsletters_in_category(
+        category=category,
+        query="machine learning",
+        limit=10
+    )
+    filtered_newsletters_df = newsletters_to_df(filtered_newsletters)
+
+    # Make json safe
+    for col in filtered_newsletters_df.columns:
+        filtered_newsletters_df[col] = filtered_newsletters_df[col].apply(json_serialisable)
+
+    # Save to Supabase
+    save_to_supabase(
+        df=filtered_newsletters_df.to_dict(orient='records'),
+        table_name=database_table_name,
+        upsert=True
+    )
 
 if __name__ == '__main__':
-    export_newsletter_data()
+    export_filtered_category_data('Technology', 'machine learning')

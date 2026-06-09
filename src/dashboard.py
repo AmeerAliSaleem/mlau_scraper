@@ -69,7 +69,7 @@ def load_queried_category_metadata(
 @st.cache_data(show_spinner="Loading category data...")
 def load_category_metadata(
         category_name: str,
-        return_num: int=0
+        return_num: int=None
 ) -> list[dict]:
     """
     Load metadata for all newsletters in the given category.
@@ -89,7 +89,7 @@ def load_category_metadata(
     category = Category(name=category_name)
     newsletters_metadata = category.get_newsletter_metadata()
 
-    if return_num > 0:
+    if return_num:
         return newsletters_metadata[:return_num]
     else:
         return newsletters_metadata

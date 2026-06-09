@@ -2,6 +2,7 @@
 
 import os
 import logging
+from typing import Any
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
@@ -50,7 +51,7 @@ def clear_supabase(table_name: str) -> None:
     )
 
 def save_to_supabase(
-        df: list[dict[str, any]],
+        df: list[dict[str, Any]],
         table_name: str,
         upsert: bool = False,
 ) -> None:

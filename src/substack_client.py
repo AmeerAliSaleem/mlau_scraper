@@ -30,13 +30,16 @@ def load_newsletter_data(
 
 def newsletters_to_df(newsletters_metadata: list[dict]) -> pd.DataFrame:
     """
-    Extracts useful statistics from the given list of newsletters (all usually under a common category),
-    and returns the result as a DataFrame.
+    Take a list of newsletter metadata (all usually under a common category) and:
+    * Sorts the newsletters in descending subscriber order
+    * Extracts useful statistics from the given list of newsletters
+    * Returns the result as a DataFrame.
 
     Parameters
     ----------
     newsletters_metadata : list[dict]
         The result of the .get_newsletter_metadata() method applied to a Category object.
+        This contains the metadata of each newsletter as its own element of the list.
 
     Returns
     ----------
