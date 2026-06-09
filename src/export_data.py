@@ -54,7 +54,7 @@ def export_filtered_category_data(
     """
     A function that:
     # TODO
-    * Makes a call to the Substack to retrieve the data for the given category
+    * Makes a call to the Substack API to retrieve the data for the given category
     * Filters the results based on the given query
     * Saves the results in the corresponding Supabase table
     """

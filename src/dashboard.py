@@ -19,10 +19,20 @@ import streamlit as st
 
 st.set_page_config(page_title="Substack Analysis", layout="wide")
 
-@st.cache_resource(show_spinner="Loading publication data...")
+@st.cache_data(show_spinner="Loading publication data...")
 def load_newsletter_data(newsletter_url: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Loads data on top posts and all posts from the given newsletter.
+
+    Parameters
+    ----------
+    newsletter_url: str
+        The URL of the newsletter to load data from.
+
+    Returns
+    ----------
+    top_posts, all_posts: tuple[pd.DataFrame, pd.DataFrame]
+        DataFrames with the top posts (according to Substack's ranking criteria) and all posts respectively.
     """
     top_posts_str = access_supabase_data('Top posts').model_dump_json()
     top_posts_json = json.loads(top_posts_str)
@@ -34,12 +44,24 @@ def load_newsletter_data(newsletter_url: str) -> tuple[pd.DataFrame, pd.DataFram
 
     return top_posts, all_posts
 
-@st.cache_resource(show_spinner="Loading category...")
+@st.cache_data(show_spinner="Loading category...")
 def load_queried_category_metadata(
     category_name: str,
     query: str
 ):
-    """Loads newsletters in category according to given query"""
+    """
+    Loads newsletters in category according to the given query.
+
+    Parameters
+    ----------
+    category_name: str
+        The name of the Substack category to load data from.
+    query: str
+        The (non-Regex) query to search category newsletters for.
+
+    Returns
+    ----------
+    """
     # TODO
     # Export query-related data to Supabase (complete export_filtered_category_data())
     # Read in Supabase contents here
@@ -47,10 +69,24 @@ def load_queried_category_metadata(
 @st.cache_data(show_spinner="Loading category data...")
 def load_category_metadata(
         category_name: str,
-        return_num: int = 0
+        return_num: int=0
 ) -> list[dict]:
+    """
+    Load metadata for all newsletters in the given category.
+
+    Parameters
+    ----------
+    category_name: str
+        The name of the Substack category to load data from.
+    return_num: int, optional
+        The number of newsletters to return. Default is 0, for which all newsletters are returned.
+
+    Returns
+    -------
+    newsletters_metadata: list[dict]
+        A list whose elements each correspond to a newsletter from the category.
+    """
     category = Category(name=category_name)
-    # newsletters = category.get_newsletters()
     newsletters_metadata = category.get_newsletter_metadata()
 
     if return_num > 0:
@@ -62,6 +98,9 @@ def word_frequency_plot(
         word_list: list[str],
         top_n: int = 10
 ):
+    """
+    Creates a bar plot of word counts, ordered by frequency.
+    """
     word_freq = Counter(word_list)
 
     words, counts = zip(*word_freq.most_common(top_n))
@@ -75,9 +114,12 @@ def word_frequency_plot(
 
     return fig
 
-def post_eda(top_post: Post):
+def post_eda(post: Post):
+    """
+    Extracts the text from the HTML form of a Substack post and displays relevant plots.
+    """
     top_post_text = filter_post_html(
-        post=top_post,
+        post=post,
         strings_to_remove=[
             "hello fellow machine learners,",
             "subscribe now",

@@ -30,7 +30,8 @@ def load_newsletter_data(
 
 def newsletters_to_df(newsletters_metadata: list[dict]) -> pd.DataFrame:
     """
-    Extracts useful statistics from the given list of newsletters (all usually under a common category).
+    Extracts useful statistics from the given list of newsletters (all usually under a common category),
+    and returns the result as a DataFrame.
 
     Parameters
     ----------
