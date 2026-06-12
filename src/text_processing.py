@@ -5,6 +5,9 @@ import demoji
 import spacy
 from substack_api import Post
 
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+
 def filter_post_html(
         post: Post,
         strings_to_remove: list[str]
@@ -54,3 +57,40 @@ def clean_text(text: str) -> list[str]:
     filtered_tokens = [token.lemma_ for token in filtered_tokens]
 
     return filtered_tokens
+
+def vectorise_text(
+    posts: list[Post],
+    strings_to_remove: list[str]
+) -> np.ndarray:
+    """
+    Applies TF-IDF to the text data of the input posts.
+
+    Parameters
+    ----------
+    posts: list[Post]
+        List of posts to vectorise.
+    strings_to_remove: list[str]
+        The strings to remove from the text.
+
+    Returns
+    ----------
+    result: np.ndarray
+        The matrix of TF-IDF values.
+
+    """
+    posts_text = [
+        filter_post_html(
+            post=post,
+            strings_to_remove=strings_to_remove
+        ) for post in posts
+    ]
+
+    posts_text_cleaned = [
+        ' '.join(clean_text(text)) for text in posts_text
+    ]
+
+    tfidf = TfidfVectorizer()
+    result = tfidf.fit_transform(posts_text_cleaned)
+    result = result.toarray()
+
+    return result
