@@ -53,10 +53,24 @@ def clear_supabase(table_name: str) -> None:
 def save_to_supabase(
         df: list[dict[str, Any]],
         table_name: str,
-        upsert: bool = False,
+        upsert: bool=True,
+        on_conflict_col='id'
 ) -> None:
     """
     Save DataFrame (in json format) to Supabase table.
+
+    Parameters
+    ----------
+    df: list[dict[str, Any]]
+        The data to save.
+    table_name: str
+        The name of the Supabase table.
+    upsert: bool, optional
+        Determines whether to perform a standard table insertion,
+        or upsert (i.e. updating records that already exist).
+        Default value is True
+    on_conflict_col: str, optional
+        The column(s) to assign upsertion to for uniqueness preservation.
     """
     supabase: Client = get_supabase_client()
 
@@ -67,7 +81,7 @@ def save_to_supabase(
             supabase.table(table_name)
             .upsert(
                 df,
-                on_conflict='id'
+                on_conflict=on_conflict_col
             )
             .execute()
         )
