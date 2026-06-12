@@ -46,9 +46,12 @@ def newsletters_to_df(newsletters_metadata: list[dict]) -> pd.DataFrame:
     top_newsletters_df: pd.DataFrame
         Useful stats in DataFrame format.
     """
+    for newsletter in newsletters_metadata:
+        newsletter['freeSubscriberCount'] = int(newsletter['freeSubscriberCount'].replace(',', '') if newsletter['freeSubscriberCount'] is not None else 0)
+
     sorted_newsletters = sorted(
         newsletters_metadata,
-        key=lambda x: int(x['freeSubscriberCount'].replace(',', '')) if x['freeSubscriberCount'] is not None else 0,
+        key=lambda x: x['freeSubscriberCount'],
         reverse=True
     )
 
