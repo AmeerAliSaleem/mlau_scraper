@@ -54,6 +54,7 @@ def newsletters_to_df(newsletters_metadata: list[dict]) -> pd.DataFrame:
 
     top_newsletters = [
         {
+            'id': metadata['id'],
             'Name': metadata['name'],
             'URL': metadata['base_url'],
             'Author': metadata['author_name'],
