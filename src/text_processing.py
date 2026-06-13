@@ -4,13 +4,14 @@ from bs4 import BeautifulSoup
 import demoji
 import spacy
 from substack_api import Post
+from settings import STRINGS_TO_REMOVE
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 def filter_post_html(
         post: Post,
-        strings_to_remove: list[str]
+        strings_to_remove: list[str]=STRINGS_TO_REMOVE
 ) -> str:
     """
     Cleans the HTML of the given post from the ML Algorithms Unpacked newsletter. Namely:
@@ -18,6 +19,18 @@ def filter_post_html(
     - Removal of emojis
     - Removal of common sections such as the conclusion
     - Removal of common phrases like "subscribe now"
+
+    Parameters
+    ----------
+    post: Post
+        The post to extract HTMl from.
+    strings_to_remove: list[str], optional
+        The common phrases to remove from the post. Default is STRINGS_TO_REMOVE.
+
+    Returns
+    ----------
+    paragraph_text: str
+        The filtered text from the <p></p> tags of the HTML.
     """
     post_contents = post.get_content()
     soup = BeautifulSoup(post_contents, "html.parser")
@@ -60,7 +73,7 @@ def clean_text(text: str) -> list[str]:
 
 def vectorise_text(
     posts: list[Post],
-    strings_to_remove: list[str]
+    strings_to_remove: list[str]=STRINGS_TO_REMOVE
 ) -> np.ndarray:
     """
     Applies TF-IDF to the text data of the input posts.
@@ -69,8 +82,8 @@ def vectorise_text(
     ----------
     posts: list[Post]
         List of posts to vectorise.
-    strings_to_remove: list[str]
-        The strings to remove from the text.
+    strings_to_remove: list[str], optional
+        The strings to remove from the text. Default is STRINGS_TO_REMOVE.
 
     Returns
     ----------
