@@ -14,10 +14,10 @@ def filter_post_html(
 ) -> str:
     """
     Cleans the HTML of the given post from the ML Algorithms Unpacked newsletter. Namely:
-    * Converting all text to lowercase
-    * Removal of emojis
-    * Removal of common sections such as the conclusion
-    * Removal of common phrases like "subscribe now"
+    - Converting all text to lowercase
+    - Removal of emojis
+    - Removal of common sections such as the conclusion
+    - Removal of common phrases like "subscribe now"
     """
     post_contents = post.get_content()
     soup = BeautifulSoup(post_contents, "html.parser")

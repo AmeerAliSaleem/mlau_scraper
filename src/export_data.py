@@ -60,9 +60,9 @@ def export_filtered_category_data(
 ) -> None:
     """
     A function that:
-    * Makes a call to the Substack API to retrieve the data for the given category
-    * Filters the results based on the given query
-    * Saves the results in the corresponding Supabase table
+    - Makes a call to the Substack API to retrieve the data for the given category
+    - Filters the results based on the given query
+    - Saves the results in the corresponding Supabase table
 
     Parameters
     ----------
