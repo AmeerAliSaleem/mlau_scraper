@@ -2,14 +2,17 @@
 
 import json
 from collections import Counter
+import numpy as np
 import pandas as pd
 
 from substack_api import Newsletter, Post, Category
 from database import access_supabase_data
+from settings import STRINGS_TO_REMOVE
+from clustering import cluster_text_and_report
 
 # Project files
 from substack_client import newsletters_to_df, posts_to_df
-from text_processing import filter_post_html, clean_text
+from text_processing import filter_post_html, clean_text, vectorise_text
 
 # Plotting
 import plotly.express as px
@@ -20,7 +23,7 @@ import streamlit as st
 st.set_page_config(page_title="Substack Analysis", layout="wide")
 
 @st.cache_data(show_spinner="Loading publication data...")
-def load_newsletter_data(newsletter_url: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_newsletter_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Loads data on top posts and all posts from the given newsletter.
 
@@ -34,15 +37,26 @@ def load_newsletter_data(newsletter_url: str) -> tuple[pd.DataFrame, pd.DataFram
     top_posts, all_posts: tuple[pd.DataFrame, pd.DataFrame]
         DataFrames with the top posts (according to Substack's ranking criteria) and all posts respectively.
     """
-    top_posts_str = access_supabase_data('Top posts').model_dump_json()
-    top_posts_json = json.loads(top_posts_str)
-    top_posts = pd.DataFrame(top_posts_json['data'])
+    # top_posts_str = access_supabase_data('Top posts').model_dump_json()
+    # top_posts_json = json.loads(top_posts_str)
+    # top_posts = pd.DataFrame(top_posts_json['data'])
 
     all_posts_str = access_supabase_data('All posts').model_dump_json()
     all_posts_json = json.loads(all_posts_str)
     all_posts = pd.DataFrame(all_posts_json['data'])
+    top_posts = all_posts.sort_values(by=['Likes'], ascending=False)[:5]
 
     return top_posts, all_posts
+
+@st.cache_data(show_spinner="Creating word embeddings...")
+def create_word_embeddings() -> np.ndarray:
+    cleaned_text = access_supabase_data('MLAU cleaned text').model_dump_json()
+    cleaned_text_json = json.loads(cleaned_text)
+    cleaned_text_df = pd.DataFrame(cleaned_text_json['data'])
+
+    embeddings = vectorise_text(cleaned_text_df['Cleaned text'])
+
+    return embeddings
 
 @st.cache_data(show_spinner="Loading category...")
 def load_queried_category_metadata(
@@ -120,12 +134,7 @@ def post_eda(post: Post):
     """
     top_post_text = filter_post_html(
         post=post,
-        strings_to_remove=[
-            "hello fellow machine learners,",
-            "subscribe now",
-            "last week,",
-            "this week"
-        ]
+        strings_to_remove=STRINGS_TO_REMOVE
     )
 
     top_post_text_clean = clean_text(top_post_text)
@@ -139,12 +148,10 @@ def run_dashboard() -> None:
     personal_tab, others_tab = st.tabs(['Personal', 'Other'])
 
     with personal_tab:
-        top_posts, all_posts = load_newsletter_data(
-            newsletter_url="https://ameersaleem.substack.com"
-        )
+        top_posts, all_posts = load_newsletter_data()
 
         with st.container():
-            st.header("Top posts")
+            st.header("Top 5 posts")
 
             top_posts = top_posts.drop(columns=['created_at'])
             st.dataframe(
@@ -157,6 +164,60 @@ def run_dashboard() -> None:
                 }
             )
 
+        with st.container():
+            # Clustering
+            st.subheader("DBSCAN results")
+
+            # plot1, sliders, plot2 = st.columns(3)
+            posts_list = [Post(all_posts['URL'].iloc[i]) for i in range(len(all_posts))]
+
+            embeddings = create_word_embeddings()
+            dbscan = cluster_text_and_report(
+                posts=posts_list,
+                word_embeddings=embeddings,
+                model_params={'eps': 1, 'min_samples': 2},
+                n_components=2,
+                plot_title='DBSCAN results (with PCA)',
+            )
+            st.plotly_chart(
+                dbscan.fig,
+                width='content'
+            )
+
+            with st.form("new_dbscan"):
+                # Other options for DBSCAN
+                eps_slider = st.slider(
+                    "Eps parameter",
+                    min_value=0.0,
+                    max_value=10.0,
+                    value=1.0,
+                    step=0.25
+                )
+                min_samples_slider = st.slider(
+                    "Min samples parameter",
+                    min_value=1,
+                    max_value=20,
+                    value=2,
+                    step=1
+                )
+                dbscan_button = st.form_submit_button(label="Run new DBSCAN")
+                # dbscan_button = st.checkbox('Run new DBSCAN')
+
+                if dbscan_button:
+                    dbscan_new = cluster_text_and_report(
+                        posts=posts_list,
+                        word_embeddings=embeddings,
+                        model_params={'eps': eps_slider, 'min_samples': min_samples_slider},
+                        n_components=2,
+                        plot_title='New DBSCAN results (with PCA)'
+                    )
+                    st.plotly_chart(
+                        dbscan_new.fig,
+                        width='content'
+                    )
+
+
+        with st.container():
             # Analytics
             st.subheader("Top post analytics")
 

@@ -4,13 +4,14 @@ from bs4 import BeautifulSoup
 import demoji
 import spacy
 from substack_api import Post
+from settings import STRINGS_TO_REMOVE
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 def filter_post_html(
         post: Post,
-        strings_to_remove: list[str]
+        strings_to_remove: list[str]=STRINGS_TO_REMOVE
 ) -> str:
     """
     Cleans the HTML of the given post from the ML Algorithms Unpacked newsletter. Namely:
@@ -18,6 +19,18 @@ def filter_post_html(
     - Removal of emojis
     - Removal of common sections such as the conclusion
     - Removal of common phrases like "subscribe now"
+
+    Parameters
+    ----------
+    post: Post
+        The post to extract HTMl from.
+    strings_to_remove: list[str], optional
+        The common phrases to remove from the post. Default is STRINGS_TO_REMOVE.
+
+    Returns
+    ----------
+    paragraph_text: str
+        The filtered text from the <p></p> tags of the HTML.
     """
     post_contents = post.get_content()
     soup = BeautifulSoup(post_contents, "html.parser")
@@ -59,18 +72,15 @@ def clean_text(text: str) -> list[str]:
     return filtered_tokens
 
 def vectorise_text(
-    posts: list[Post],
-    strings_to_remove: list[str]
+    posts_text_cleaned: list[str]
 ) -> np.ndarray:
     """
     Applies TF-IDF to the text data of the input posts.
 
     Parameters
     ----------
-    posts: list[Post]
-        List of posts to vectorise.
-    strings_to_remove: list[str]
-        The strings to remove from the text.
+    posts_text_cleaned: list[str]
+        List of filtered, clean text.
 
     Returns
     ----------
@@ -78,17 +88,6 @@ def vectorise_text(
         The matrix of TF-IDF values.
 
     """
-    posts_text = [
-        filter_post_html(
-            post=post,
-            strings_to_remove=strings_to_remove
-        ) for post in posts
-    ]
-
-    posts_text_cleaned = [
-        ' '.join(clean_text(text)) for text in posts_text
-    ]
-
     tfidf = TfidfVectorizer()
     result = tfidf.fit_transform(posts_text_cleaned)
     result = result.toarray()
