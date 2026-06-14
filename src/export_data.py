@@ -4,13 +4,15 @@ import datetime
 import pandas as pd
 from pandas._libs.missing import NAType
 
-from substack_api import Newsletter, Category
+from substack_api import Post, Newsletter, Category
 from substack_client import (load_newsletter_data, newsletters_to_df,
                              filter_newsletters_in_category, posts_to_df)
+from text_processing import filter_post_html, clean_text
 from database import save_to_supabase, clear_supabase
+from settings import STRINGS_TO_REMOVE
 
 # TODO
-# * Implement export_category_data function (save to new table?) or keep as API call
+# * Integrate export_filtered_category_data() into webapp
 # * Function to search all newsletters in a category, returning only the ones related to ML, AI, etc.
 
 def json_serialisable(obj):
@@ -53,6 +55,51 @@ def export_newsletter_data() -> None:
         upsert=True
     )
 
+def export_posts_cleaned_text(
+    posts: list[Post],
+    table_name: str
+) -> None:
+    """
+    Cleans text of newsletter's posts and stores the results in the corresponding Supabase table.
+
+    Parameters
+    ----------
+    posts: list[Post]
+        The list of posts.
+    table_name: str
+        The name of the Supabase table to save the results to.
+    """
+    posts_text = [
+        filter_post_html(
+            post=post,
+            strings_to_remove=STRINGS_TO_REMOVE
+        ) for post in posts
+    ]
+
+    posts_text_cleaned = [
+        ' '.join(clean_text(text)) for text in posts_text
+    ]
+
+    post_ids, post_titles = zip(*[
+        (post.get_metadata()['id'], post.get_metadata()['title'])
+        for post in posts
+    ])
+
+    cleaned_text_df = pd.DataFrame(
+        {
+            'id': post_ids,
+            'Title': post_titles,
+            'Cleaned text': posts_text_cleaned
+        }
+    )
+
+    # Save to Supabase
+    save_to_supabase(
+        df=cleaned_text_df.to_dict(orient='records'),
+        table_name=table_name,
+        upsert=True
+    )
+
 def export_filtered_category_data(
     category_name: str,
     query: str,
@@ -89,7 +136,6 @@ def export_filtered_category_data(
 
     filtered_newsletters_df = filtered_newsletters_df.fillna('')
 
-    # Save to Supabase
     save_to_supabase(
         df=filtered_newsletters_df.to_dict(orient='records'),
         table_name=database_table_name,
@@ -97,8 +143,9 @@ def export_filtered_category_data(
     )
 
 if __name__ == '__main__':
-    export_filtered_category_data(
-        'Technology',
-        'machine learning',
-        limit=10
+    newsletter = Newsletter("https://ameersaleem.substack.com")
+    all_posts = newsletter.get_posts()
+    export_posts_cleaned_text(
+        all_posts,
+        table_name='MLAU cleaned text'
     )

@@ -30,6 +30,7 @@ class DBSCAN_model:
         self.n_noise_ = None
         self.pca_data = None
         self.df = None
+        self.fig = None
 
     def fit(self):
         dbscan = DBSCAN(**self.model_params)
@@ -69,25 +70,26 @@ class DBSCAN_model:
             lambda x: 'outlier' if x == '-1' else x
         )
 
-    def cluster_fig(self):
-        fig = px.scatter(
+    def cluster_fig(self, title: str):
+        self.fig = px.scatter(
             self.df,
             x='pca_x',
             y='pca_y',
-            title='DBSCAN Clustering',
+            title=title,
             color='cluster_label',
             custom_data=['article_number', 'title'],
         )
-        fig.update_traces(
+        self.fig.update_traces(
             marker_size=10,
             hovertemplate='Article %{customdata[0]}: %{customdata[1]}<extra></extra>' # extra to remove cluster label on hover
         )
-        return fig
 
 def cluster_text_and_report(
     posts: list[Post],
+    word_embeddings: np.ndarray,
     model_params: dict,
-    n_components: int=2
+    n_components: int=2,
+    plot_title: str="DBSCAN results"
 ) -> DBSCAN_model:
     """
     A function that:
@@ -99,21 +101,20 @@ def cluster_text_and_report(
     ----------
     posts: list[Post]
         The list of Posts to process and cluster.
+    word_embeddings: np.ndarray
+        The embeddings for the text in the posts.
     model_params:
         Parameters for the DBSCAN model.
     n_components: int, optional
         The number of components for PCA. Default is 2.
+    plot_title: str, optional
+        The title for the clustering plot. Default is "DBSCAN results"
 
     Returns
     -------
     dbscan: DBSCAN_model
         An object from a custom class that includes the DBSCAN model + metadata.
     """
-    word_embeddings = vectorise_text(
-        posts,
-        strings_to_remove=STRINGS_TO_REMOVE
-    )
-
     dbscan = DBSCAN_model(
         posts=posts,
         vectorised_data=word_embeddings,
@@ -122,6 +123,6 @@ def cluster_text_and_report(
     dbscan.fit()
     dbscan.pca(n_components=n_components)
     dbscan.construct_df()
-    dbscan.cluster_fig()
+    dbscan.cluster_fig(title=plot_title)
 
     return dbscan

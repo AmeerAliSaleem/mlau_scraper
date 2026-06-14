@@ -72,9 +72,12 @@ def clean_text(text: str) -> list[str]:
     return filtered_tokens
 
 def vectorise_text(
-    posts: list[Post],
+    # posts: list[Post],
+    # posts_text: str,
+    posts_text_cleaned: list[str],
     strings_to_remove: list[str]=STRINGS_TO_REMOVE
 ) -> np.ndarray:
+    # TODO: update docstring and clean up function
     """
     Applies TF-IDF to the text data of the input posts.
 
@@ -91,16 +94,16 @@ def vectorise_text(
         The matrix of TF-IDF values.
 
     """
-    posts_text = [
-        filter_post_html(
-            post=post,
-            strings_to_remove=strings_to_remove
-        ) for post in posts
-    ]
+    # posts_text = [
+    #     filter_post_html(
+    #         post=post,
+    #         strings_to_remove=strings_to_remove
+    #     ) for post in posts
+    # ]
 
-    posts_text_cleaned = [
-        ' '.join(clean_text(text)) for text in posts_text
-    ]
+    # posts_text_cleaned = [
+    #     ' '.join(clean_text(text)) for text in posts_text
+    # ]
 
     tfidf = TfidfVectorizer()
     result = tfidf.fit_transform(posts_text_cleaned)
