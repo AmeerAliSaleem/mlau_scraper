@@ -1,5 +1,5 @@
 # mlau_scraper
-A tool to extract insights from my Machine Learning Algorithms Unpacked publication, with the aim of exploring what content resonates with the audience, what doesn't, and recommendations on future topics that I should write about.
+A tool to extract insights from my [Machine Learning Algorithms Unpacked publication](https://ameersaleem.substack.com/), with the aim of exploring what content resonates with the audience, what doesn't, and recommendations on future topics that I should write about.
 
 # Components
 1. EDA on Substack posts
