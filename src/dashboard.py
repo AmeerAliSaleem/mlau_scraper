@@ -5,7 +5,7 @@ from collections import Counter
 import numpy as np
 import pandas as pd
 
-from substack_api import Newsletter, Post, Category
+from substack_api import Newsletter, Category
 from database import access_supabase_data
 from settings import STRINGS_TO_REMOVE
 from clustering import cluster_text_and_report
@@ -23,7 +23,7 @@ import streamlit as st
 st.set_page_config(page_title="Substack Analysis", layout="wide")
 
 @st.cache_data(show_spinner="Loading publication data...")
-def load_newsletter_data() -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_newsletter_from_database() -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Loads data on top posts and all posts from the given newsletter.
 
@@ -37,13 +37,10 @@ def load_newsletter_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     top_posts, all_posts: tuple[pd.DataFrame, pd.DataFrame]
         DataFrames with the top posts (according to Substack's ranking criteria) and all posts respectively.
     """
-    # top_posts_str = access_supabase_data('Top posts').model_dump_json()
-    # top_posts_json = json.loads(top_posts_str)
-    # top_posts = pd.DataFrame(top_posts_json['data'])
-
     all_posts_str = access_supabase_data('All posts').model_dump_json()
     all_posts_json = json.loads(all_posts_str)
     all_posts = pd.DataFrame(all_posts_json['data'])
+
     top_posts = all_posts.sort_values(by=['Likes'], ascending=False)[:5]
 
     return top_posts, all_posts
@@ -128,12 +125,12 @@ def word_frequency_plot(
 
     return fig
 
-def post_eda(post: Post):
+def post_eda(post_html: str):
     """
     Extracts the text from the HTML form of a Substack post and displays relevant plots.
     """
     top_post_text = filter_post_html(
-        post=post,
+        post_html=post_html,
         strings_to_remove=STRINGS_TO_REMOVE
     )
 
@@ -148,7 +145,7 @@ def run_dashboard() -> None:
     personal_tab, others_tab = st.tabs(['Personal', 'Other'])
 
     with personal_tab:
-        top_posts, all_posts = load_newsletter_data()
+        top_posts, all_posts = load_newsletter_from_database()
 
         with st.container():
             st.header("Top 5 posts")
@@ -169,11 +166,10 @@ def run_dashboard() -> None:
             st.subheader("DBSCAN results")
 
             # plot1, sliders, plot2 = st.columns(3)
-            posts_list = [Post(all_posts['URL'].iloc[i]) for i in range(len(all_posts))]
 
             embeddings = create_word_embeddings()
             dbscan = cluster_text_and_report(
-                posts=posts_list,
+                posts=all_posts[['Title', 'URL']],
                 word_embeddings=embeddings,
                 model_params={'eps': 1, 'min_samples': 2},
                 n_components=2,
@@ -205,7 +201,7 @@ def run_dashboard() -> None:
 
                 if dbscan_button:
                     dbscan_new = cluster_text_and_report(
-                        posts=posts_list,
+                        posts=all_posts[['Title', 'URL']],
                         word_embeddings=embeddings,
                         model_params={'eps': eps_slider, 'min_samples': min_samples_slider},
                         n_components=2,
@@ -226,9 +222,7 @@ def run_dashboard() -> None:
                 top_posts['Title'],
             )
 
-            top_post = Post(
-                url=top_posts.loc[top_posts['Title'] == top_post_title_option, 'URL'].iat[0],
-            )
+            top_post = top_posts.loc[top_posts['Title'] == top_post_title_option, 'Post HTML'].iloc[0]
             post_eda(top_post)
 
         with st.container():

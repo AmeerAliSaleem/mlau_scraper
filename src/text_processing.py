@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 def filter_post_html(
-        post: Post,
+        post_html: str,
         strings_to_remove: list[str]=STRINGS_TO_REMOVE
 ) -> str:
     """
@@ -22,8 +22,8 @@ def filter_post_html(
 
     Parameters
     ----------
-    post: Post
-        The post to extract HTMl from.
+    post_html: str
+        The HTMl of the post.
     strings_to_remove: list[str], optional
         The common phrases to remove from the post. Default is STRINGS_TO_REMOVE.
 
@@ -32,8 +32,8 @@ def filter_post_html(
     paragraph_text: str
         The filtered text from the <p></p> tags of the HTML.
     """
-    post_contents = post.get_content()
-    soup = BeautifulSoup(post_contents, "html.parser")
+    # post_contents = post.get_content()
+    soup = BeautifulSoup(post_html, "html.parser")
 
     paragraphs = soup.find_all("p")  # Does not include things like headers
     paragraph_text = [text.text.lower() for text in paragraphs]
@@ -71,9 +71,7 @@ def clean_text(text: str) -> list[str]:
 
     return filtered_tokens
 
-def vectorise_text(
-    posts_text_cleaned: list[str]
-) -> np.ndarray:
+def vectorise_text(posts_text_cleaned: list[str]) -> np.ndarray:
     """
     Applies TF-IDF to the text data of the input posts.
 

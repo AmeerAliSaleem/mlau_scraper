@@ -9,7 +9,7 @@ from substack_client import (load_newsletter_data, newsletters_to_df,
                              filter_newsletters_in_category, posts_to_df)
 from text_processing import filter_post_html, clean_text
 from database import save_to_supabase, clear_supabase
-from settings import STRINGS_TO_REMOVE
+from settings import NEWSLETTER_URL, STRINGS_TO_REMOVE
 
 # TODO
 # * Integrate export_filtered_category_data() into webapp
@@ -27,28 +27,18 @@ def json_serialisable(obj):
 
     return obj
 
-def export_newsletter_data() -> None:
+def export_newsletter_data(newsletter_url: str) -> None:
     """
     A function to scrape Substack data and store the results in Supabase.
     """
-    top_posts, all_posts = load_newsletter_data(
-        newsletter_url='https://ameersaleem.substack.com'
+    all_posts = load_newsletter_data(
+        newsletter_url=newsletter_url
     )
-
-    top_posts_df = posts_to_df(top_posts)
     all_posts_df = posts_to_df(all_posts)
-
-    for col in top_posts_df.columns:
-        top_posts_df[col] = top_posts_df[col].apply(json_serialisable)
 
     for col in all_posts_df.columns:
         all_posts_df[col] = all_posts_df[col].apply(json_serialisable)
 
-    save_to_supabase(
-        df=top_posts_df.to_dict(orient='records'),
-        table_name='Top posts',
-        upsert=True
-    )
     save_to_supabase(
         df=all_posts_df.to_dict(orient='records'),
         table_name='All posts',
@@ -143,9 +133,14 @@ def export_filtered_category_data(
     )
 
 if __name__ == '__main__':
-    newsletter = Newsletter("https://ameersaleem.substack.com")
-    all_posts = newsletter.get_posts()
-    export_posts_cleaned_text(
-        all_posts,
-        table_name='MLAU cleaned text'
-    )
+    # top_posts, all_posts = load_newsletter_data("https://ameersaleem.substack.com")
+    # all_posts_df = posts_to_df(all_posts)
+
+    export_newsletter_data(newsletter_url=NEWSLETTER_URL)
+
+    # newsletter = Newsletter(NEWSLETTER_URL)
+    # all_posts = newsletter.get_posts()
+    # export_posts_cleaned_text(
+    #     all_posts,
+    #     table_name='MLAU cleaned text'
+    # )
