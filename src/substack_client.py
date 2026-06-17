@@ -3,10 +3,7 @@
 import pandas as pd
 from substack_api import Newsletter, Post, Category
 
-def load_newsletter_data(
-        newsletter_url: str,
-        top_limit: int=5
-) -> tuple[list[Post], list[Post]]:
+def load_newsletter_data(newsletter_url: str) -> list[Post]:
     """
     Loads data from Substack API on top posts and all posts from the given newsletter.
 
@@ -14,8 +11,6 @@ def load_newsletter_data(
     ----------
     newsletter_url: str
         The newsletter URL.
-    top_limit: int=5
-        The maximum number of top posts to return.
 
     Returns
     ----------
@@ -23,10 +18,9 @@ def load_newsletter_data(
         DataFrames corresponding to the top posts, as well as all posts in reverse chronological order.
     """
     newsletter = Newsletter(newsletter_url)
-    top_posts = newsletter.get_posts(sorting="top", limit=top_limit)
     all_posts = newsletter.get_posts(sorting="new")
 
-    return top_posts, all_posts
+    return all_posts
 
 def newsletters_to_df(newsletters_metadata: list[dict]) -> pd.DataFrame:
     """
@@ -143,7 +137,8 @@ def posts_to_df(posts: list[Post]) -> pd.DataFrame:
             'Word count': metadata['wordcount'],
             'Likes': metadata['reaction_count'],
             'Restacks': metadata['restacks'],
-            "No. of comments (exc. replies)": metadata['comment_count'] - metadata['child_comment_count']
+            "No. of comments (exc. replies)": metadata['comment_count'] - metadata['child_comment_count'],
+            'Post HTML': metadata['body_html']
         }
         for metadata in posts_metadata
     ]

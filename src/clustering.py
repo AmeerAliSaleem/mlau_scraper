@@ -16,11 +16,8 @@ import plotly.express as px
 from text_processing import vectorise_text
 
 class DBSCAN_model:
-    """
-    TODO May be better suited as a DataClass
-    """
     def __init__(self, posts, vectorised_data, model_params):
-        self.posts: list[Post] = posts
+        self.posts: pd.DataFrame = posts
         self.vectorised_data: np.ndarray = vectorised_data
         self.model_params: dict[str, float] = model_params
 
@@ -49,16 +46,11 @@ class DBSCAN_model:
         self.pca_data = pca.fit_transform(self.vectorised_data)
 
     def construct_df(self):
-        ids, titles = zip(*[
-            (post.get_metadata()['id'], post.get_metadata()['title'])
-            for post in self.posts
-        ])
-
         self.df = pd.DataFrame(
             {
-                'id': ids,
-                'title': titles,
-                'article_number': [len(ids) - i for i in range(len(ids))],  # Reverse chronological order
+                'id': self.posts['Title'],
+                'title': self.posts['URL'],
+                'article_number': [len(self.posts) - i for i in range(len(self.posts))],  # Reverse chronological order
                 'pca_x': self.pca_data[:, 0],
                 'pca_y': self.pca_data[:, 1],
                 'cluster_label': self.labels_
@@ -85,7 +77,7 @@ class DBSCAN_model:
         )
 
 def cluster_text_and_report(
-    posts: list[Post],
+    posts: pd.DataFrame,
     word_embeddings: np.ndarray,
     model_params: dict,
     n_components: int=2,
@@ -99,8 +91,8 @@ def cluster_text_and_report(
 
     Parameters
     ----------
-    posts: list[Post]
-        The list of Posts to process and cluster.
+    posts: pd.DataFrame
+        The title and URL of each post.
     word_embeddings: np.ndarray
         The embeddings for the text in the posts.
     model_params:
