@@ -2,13 +2,13 @@
 
 import datetime
 import pandas as pd
-from pandas._libs.missing import NAType
+import json
 
 from substack_api import Post, Newsletter, Category
 from substack_client import (load_newsletter_data, newsletters_to_df,
                              filter_newsletters_in_category, posts_to_df)
 from text_processing import filter_post_html, clean_text
-from database import save_to_supabase, clear_supabase
+from database import access_supabase_data, save_to_supabase, clear_supabase
 from settings import NEWSLETTER_URL, STRINGS_TO_REMOVE
 
 # TODO
@@ -46,39 +46,39 @@ def export_newsletter_data(newsletter_url: str) -> None:
     )
 
 def export_posts_cleaned_text(
-    posts: list[Post],
-    table_name: str
+    raw_database_name: str,
+    target_database_name: str,
 ) -> None:
     """
     Cleans text of newsletter's posts and stores the results in the corresponding Supabase table.
 
     Parameters
     ----------
-    posts: list[Post]
-        The list of posts.
-    table_name: str
+    raw_database_name: str
+        The name of the Supabase table where the raw Substack post data is stored.
+    target_database_name: str
         The name of the Supabase table to save the results to.
     """
+    posts_str = access_supabase_data(table_name=raw_database_name).model_dump_json()
+    posts_json = json.loads(posts_str)
+    posts_df = pd.DataFrame(posts_json['data'])
+
+    posts_html = posts_df['Post HTML']
     posts_text = [
         filter_post_html(
-            post=post,
+            post_html=post_html,
             strings_to_remove=STRINGS_TO_REMOVE
-        ) for post in posts
+        ) for post_html in posts_html
     ]
 
     posts_text_cleaned = [
         ' '.join(clean_text(text)) for text in posts_text
     ]
 
-    post_ids, post_titles = zip(*[
-        (post.get_metadata()['id'], post.get_metadata()['title'])
-        for post in posts
-    ])
-
     cleaned_text_df = pd.DataFrame(
         {
-            'id': post_ids,
-            'Title': post_titles,
+            'id': posts_df['id'],
+            'Title': posts_df['Title'],
             'Cleaned text': posts_text_cleaned
         }
     )
@@ -86,7 +86,7 @@ def export_posts_cleaned_text(
     # Save to Supabase
     save_to_supabase(
         df=cleaned_text_df.to_dict(orient='records'),
-        table_name=table_name,
+        table_name=target_database_name,
         upsert=True
     )
 
@@ -133,14 +133,8 @@ def export_filtered_category_data(
     )
 
 if __name__ == '__main__':
-    # top_posts, all_posts = load_newsletter_data("https://ameersaleem.substack.com")
-    # all_posts_df = posts_to_df(all_posts)
-
-    export_newsletter_data(newsletter_url=NEWSLETTER_URL)
-
-    # newsletter = Newsletter(NEWSLETTER_URL)
-    # all_posts = newsletter.get_posts()
-    # export_posts_cleaned_text(
-    #     all_posts,
-    #     table_name='MLAU cleaned text'
-    # )
+    # export_newsletter_data(newsletter_url=NEWSLETTER_URL)
+    export_posts_cleaned_text(
+        raw_database_name='All posts',
+        target_database_name='MLAU cleaned text'
+    )
