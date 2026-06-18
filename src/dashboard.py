@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from substack_api import Newsletter, Category
-from database import access_supabase_data
+from database import access_supabase_data, supabase_to_df
 from settings import STRINGS_TO_REMOVE
 from clustering import cluster_text_and_report
 
@@ -23,24 +23,21 @@ import streamlit as st
 st.set_page_config(page_title="Substack Analysis", layout="wide")
 
 @st.cache_data(show_spinner="Loading publication data...")
-def load_newsletter_from_database() -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_newsletter_from_database(table_name: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Loads data on top posts and all posts from the given newsletter.
 
     Parameters
     ----------
-    newsletter_url: str
-        The URL of the newsletter to load data from.
+    table_name: str
+        The name of the Supabase table.
 
     Returns
     ----------
     top_posts, all_posts: tuple[pd.DataFrame, pd.DataFrame]
         DataFrames with the top posts (according to Substack's ranking criteria) and all posts respectively.
     """
-    all_posts_str = access_supabase_data('All posts').model_dump_json()
-    all_posts_json = json.loads(all_posts_str)
-    all_posts = pd.DataFrame(all_posts_json['data'])
-
+    all_posts = supabase_to_df(table_name)
     top_posts = all_posts.sort_values(by=['Likes'], ascending=False)[:5]
 
     return top_posts, all_posts
@@ -55,28 +52,24 @@ def create_word_embeddings() -> np.ndarray:
 
     return embeddings
 
-@st.cache_data(show_spinner="Loading category...")
-def load_queried_category_metadata(
-    category_name: str,
-    query: str
-):
+@st.cache_data(show_spinner="Loading competitor data...")
+def load_competitor_metadata(table_name: str) -> pd.DataFrame:
     """
-    Loads newsletters in category according to the given query.
+    Loads data on competing newsletters.
 
     Parameters
     ----------
-    category_name: str
-        The name of the Substack category to load data from.
-    query: str
-        The (non-Regex) query to search category newsletters for.
+    table_name: str
+        The name of the Supabase table.
 
     Returns
     ----------
     """
-    # TODO
-    # Export query-related data to Supabase (complete export_filtered_category_data())
-    # Read in Supabase contents here
+    ml_newsletters = supabase_to_df(table_name)
 
+    return ml_newsletters
+
+# TODO remove dependence on Category (i.e. by eliminating the below function)
 @st.cache_data(show_spinner="Loading category data...")
 def load_category_metadata(
         category_name: str,
@@ -145,10 +138,11 @@ def run_dashboard() -> None:
     personal_tab, others_tab = st.tabs(['Personal', 'Other'])
 
     with personal_tab:
-        top_posts, all_posts = load_newsletter_from_database()
+        top_posts, all_posts = load_newsletter_from_database('All posts')
 
         with st.container():
-            st.header("Top 5 posts")
+            st.header("My top 5 posts")
+            st.write("Based on the highest number of likes")
 
             top_posts = top_posts.drop(columns=['created_at'])
             st.dataframe(
@@ -164,21 +158,27 @@ def run_dashboard() -> None:
         with st.container():
             # Clustering
             st.subheader("DBSCAN results")
+            st.write("Insights from clustering my articles")
 
-            # plot1, sliders, plot2 = st.columns(3)
+            # TODO View cluster groups in more detail
 
-            embeddings = create_word_embeddings()
-            dbscan = cluster_text_and_report(
-                posts=all_posts[['Title', 'URL']],
-                word_embeddings=embeddings,
-                model_params={'eps': 1, 'min_samples': 2},
-                n_components=2,
-                plot_title='DBSCAN results (with PCA)',
-            )
-            st.plotly_chart(
-                dbscan.fig,
-                width='content'
-            )
+            plot_view, cluster_view = st.columns(2)
+            with plot_view:
+                embeddings = create_word_embeddings()
+                dbscan = cluster_text_and_report(
+                    posts=all_posts[['id', 'Title', 'URL']],
+                    word_embeddings=embeddings,
+                    model_params={'eps': 1, 'min_samples': 2},
+                    n_components=2,
+                    plot_title='DBSCAN results (with PCA)',
+                )
+                st.plotly_chart(
+                    dbscan.fig,
+                    width='content'
+                )
+
+            with cluster_view:
+                st.write("Explore the articles grouped in each cluster:")
 
             with st.form("new_dbscan"):
                 # Other options for DBSCAN
@@ -197,7 +197,6 @@ def run_dashboard() -> None:
                     step=1
                 )
                 dbscan_button = st.form_submit_button(label="Run new DBSCAN")
-                # dbscan_button = st.checkbox('Run new DBSCAN')
 
                 if dbscan_button:
                     dbscan_new = cluster_text_and_report(
@@ -254,24 +253,21 @@ def run_dashboard() -> None:
             )
 
     with others_tab:
-        top_tech_newsletters = load_category_metadata(
-            category_name="Technology",
-            # return_num=5
-        )
-
         with st.container():
-            st.header("Top tech newsletters")
+            st.header("Top machine learning newsletters")
+            st.write("Filtering of the Substack 'Technology' category for the newsletters with ML-related posts.")
 
-            top_tech_newsletters_df = newsletters_to_df(top_tech_newsletters)
-
+            ml_newsletters = load_competitor_metadata('machine_learning_newsletters')
             st.dataframe(
-                top_tech_newsletters_df,
+                ml_newsletters,
                 column_config={
-                    "URL": st.column_config.LinkColumn(
-                        label="Newsletter URL",
-                    )
-                }
+                        "URL": st.column_config.LinkColumn(
+                            label="Newsletter URL",
+                        )
+                    }
             )
+
+            # TODO option to view ML-related posts of the newsletters in the above table
 
 def main():
     run_dashboard()

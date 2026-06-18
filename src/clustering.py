@@ -17,7 +17,7 @@ from text_processing import vectorise_text
 
 class DBSCAN_model:
     def __init__(self, posts, vectorised_data, model_params):
-        self.posts: pd.DataFrame = posts
+        self.posts: pd.DataFrame = posts.sort_values(by=['id'], ascending=False)
         self.vectorised_data: np.ndarray = vectorised_data
         self.model_params: dict[str, float] = model_params
 
@@ -48,8 +48,9 @@ class DBSCAN_model:
     def construct_df(self):
         self.df = pd.DataFrame(
             {
-                'id': self.posts['Title'],
-                'title': self.posts['URL'],
+                'id': self.posts['id'],
+                'title': self.posts['Title'],
+                'url': self.posts['URL'],
                 'article_number': [len(self.posts) - i for i in range(len(self.posts))],  # Reverse chronological order
                 'pca_x': self.pca_data[:, 0],
                 'pca_y': self.pca_data[:, 1],

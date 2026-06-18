@@ -1,6 +1,8 @@
 """Functions to handle interactions with Supabase"""
 
 import os
+import json
+import pandas as pd
 import logging
 from typing import Any
 from dotenv import load_dotenv
@@ -37,6 +39,13 @@ def access_supabase_data(table_name: str):
     )
 
     return df
+
+def supabase_to_df(table_name: str) -> pd.DataFrame:
+    data_str = access_supabase_data(table_name).model_dump_json()
+    data_json = json.loads(data_str)
+    data_df = pd.DataFrame(data_json['data'])
+
+    return data_df
 
 def clear_supabase(table_name: str) -> None:
     """Refresh the current state of the 'Top posts' table."""
