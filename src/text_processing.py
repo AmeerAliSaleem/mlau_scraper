@@ -3,7 +3,7 @@
 from bs4 import BeautifulSoup
 import demoji
 import spacy
-from substack_api import Post
+from spacy_loader import get_spacy_model
 from settings import STRINGS_TO_REMOVE
 
 import numpy as np
@@ -56,7 +56,8 @@ def clean_text(text: str) -> list[str]:
 
     Returns list of words in lemmatised form.
     """
-    nlp = spacy.load("en_core_web_sm")
+    # nlp = spacy.load("en_core_web_sm")
+    nlp = get_spacy_model()
     doc = nlp(text)  # Attaches useful metadata to clean_text
 
     # Remove stop words, punctuation and blank spaces
