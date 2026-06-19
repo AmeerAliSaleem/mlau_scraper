@@ -57,6 +57,7 @@ class DBSCAN_model:
                 'cluster_label': self.labels_
             }
         )
+        self.df = self.df.sort_values(by=['cluster_label'], ascending=True)
 
         self.df['cluster_label'] = self.df['cluster_label'].astype(str)
         self.df['cluster_label'] = self.df['cluster_label'].apply(

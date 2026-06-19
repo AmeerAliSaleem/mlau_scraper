@@ -160,9 +160,7 @@ def run_dashboard() -> None:
             st.subheader("DBSCAN results")
             st.write("Insights from clustering my articles")
 
-            # TODO View cluster groups in more detail
-
-            plot_view, cluster_view = st.columns(2)
+            plot_view, table_view = st.columns(2)
             with plot_view:
                 embeddings = create_word_embeddings()
                 dbscan = cluster_text_and_report(
@@ -177,8 +175,17 @@ def run_dashboard() -> None:
                     width='content'
                 )
 
-            with cluster_view:
+            with table_view:
                 st.write("Explore the articles grouped in each cluster:")
+
+                tab_names = dbscan.df['cluster_label'].unique().tolist()
+                tabs = st.tabs(tab_names)
+                for tab, tab_name in zip(tabs, tab_names):
+                    with tab:
+                        cluster_group = dbscan.df.loc[
+                            dbscan.df['cluster_label']==tab_name,
+                        ]
+                        st.dataframe(cluster_group)
 
             with st.form("new_dbscan"):
                 # Other options for DBSCAN
@@ -199,18 +206,32 @@ def run_dashboard() -> None:
                 dbscan_button = st.form_submit_button(label="Run new DBSCAN")
 
                 if dbscan_button:
-                    dbscan_new = cluster_text_and_report(
-                        posts=all_posts[['Title', 'URL']],
-                        word_embeddings=embeddings,
-                        model_params={'eps': eps_slider, 'min_samples': min_samples_slider},
-                        n_components=2,
-                        plot_title='New DBSCAN results (with PCA)'
-                    )
-                    st.plotly_chart(
-                        dbscan_new.fig,
-                        width='content'
-                    )
+                    plot_view_new, table_view_new = st.columns(2)
 
+                    with plot_view_new:
+                        dbscan_new = cluster_text_and_report(
+                            posts=all_posts[['id', 'Title', 'URL']],
+                            word_embeddings=embeddings,
+                            model_params={'eps': eps_slider, 'min_samples': min_samples_slider},
+                            n_components=2,
+                            plot_title='New DBSCAN results (with PCA)'
+                        )
+                        st.plotly_chart(
+                            dbscan_new.fig,
+                            width='content'
+                        )
+
+                    with table_view_new:
+                        st.write("Explore the articles grouped in each cluster:")
+
+                        tab_names = dbscan_new.df['cluster_label'].unique().tolist()
+                        tabs = st.tabs(tab_names)
+                        for tab, tab_name in zip(tabs, tab_names):
+                            with tab:
+                                cluster_group = dbscan_new.df.loc[
+                                    dbscan_new.df['cluster_label'] == tab_name,
+                                ]
+                                st.dataframe(cluster_group)
 
         with st.container():
             # Analytics
@@ -239,7 +260,7 @@ def run_dashboard() -> None:
             fig_hour = px.bar(all_posts, x='Date of upload', y='Hour of upload', title="Hour of upload")
             st.plotly_chart(fig_hour, key="hour_of_upload")
 
-            st.subheader("Tabular stats")
+            st.subheader("All posts")
 
             all_posts = all_posts.drop(columns=['created_at'])
             st.dataframe(
