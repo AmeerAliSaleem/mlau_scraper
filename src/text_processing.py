@@ -56,8 +56,8 @@ def clean_text(text: str) -> list[str]:
 
     Returns list of words in lemmatised form.
     """
-    # nlp = spacy.load("en_core_web_sm")
-    nlp = get_spacy_model()
+    nlp = spacy.load("en_core_web_sm")
+    # nlp = get_spacy_model()
     doc = nlp(text)  # Attaches useful metadata to clean_text
 
     # Remove stop words, punctuation and blank spaces
