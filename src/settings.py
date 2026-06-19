@@ -8,3 +8,5 @@ STRINGS_TO_REMOVE = [
     "last week,",
     "this week"
 ]
+
+MODEL = "en_core_web_sm"
