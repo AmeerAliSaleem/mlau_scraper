@@ -3,7 +3,6 @@
 from bs4 import BeautifulSoup
 import demoji
 import spacy
-from spacy_loader import get_spacy_model
 from settings import STRINGS_TO_REMOVE
 
 import numpy as np
@@ -32,7 +31,6 @@ def filter_post_html(
     paragraph_text: str
         The filtered text from the <p></p> tags of the HTML.
     """
-    # post_contents = post.get_content()
     soup = BeautifulSoup(post_html, "html.parser")
 
     paragraphs = soup.find_all("p")  # Does not include things like headers
@@ -57,7 +55,6 @@ def clean_text(text: str) -> list[str]:
     Returns list of words in lemmatised form.
     """
     nlp = spacy.load("en_core_web_sm")
-    # nlp = get_spacy_model()
     doc = nlp(text)  # Attaches useful metadata to clean_text
 
     # Remove stop words, punctuation and blank spaces
