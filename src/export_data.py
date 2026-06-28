@@ -12,8 +12,12 @@ from database import access_supabase_data, save_to_supabase, clear_supabase
 from settings import NEWSLETTER_URL, STRINGS_TO_REMOVE
 
 # TODO
-# * Integrate export_filtered_category_data() into webapp
-# * Function to search all newsletters in a category, returning only the ones related to ML, AI, etc.
+# - Check that export_newsletter_data() still works after making small change to posts_to_df().
+#     - Need to fix issue with duplicates in machine_learning_posts.
+#     - Apparently duplicated IDs in the same invocation of save_to_supabase()
+# - Check that export_filtered_category_data() exports to both tables correctly.
+# - New table of ML posts related to each ML newsletter.
+# - Function to search all newsletters in a category, returning only the ones related to ML, AI, etc.
 
 def json_serialisable(obj):
     """
@@ -110,14 +114,33 @@ def export_filtered_category_data(
     limit: int, optional
         The number of results to return. Default is 10.
     """
-    database_table_name = f'{category_name.lower()}_{query.replace(' ', '_')}'
+    newsletters_table_name = f'{category_name.lower()}_{query.replace(' ', '_')}'
+    posts_table_name = f'{query.replace(' ', '_')}_posts'
     category = Category(category_name)
 
-    filtered_newsletters = filter_newsletters_in_category(
-        category=category,
+    filtered_newsletters, newsletter_to_posts = filter_newsletters_in_category(
+        newsletter_category=category,
         query=query,
         limit=limit
     )
+
+    # --- Exporting query-related posts of the filtered newsletters ---
+    for newsletter in newsletter_to_posts:
+        newsletter_posts_df = posts_to_df(newsletter_to_posts[newsletter])
+
+        # Make json safe
+        for col in newsletter_posts_df.columns:
+            newsletter_posts_df[col] = newsletter_posts_df[col].apply(json_serialisable)
+
+        newsletter_posts_df = newsletter_posts_df.fillna('')
+
+        save_to_supabase(
+            df=newsletter_posts_df.to_dict(orient='records'),
+            table_name=posts_table_name,
+            upsert=True
+        )
+
+    # --- Exporting filtered_newsletters ---
     filtered_newsletters_df = newsletters_to_df(filtered_newsletters)
 
     # Make json safe
@@ -128,13 +151,20 @@ def export_filtered_category_data(
 
     save_to_supabase(
         df=filtered_newsletters_df.to_dict(orient='records'),
-        table_name=database_table_name,
+        table_name=newsletters_table_name,
         upsert=True
     )
 
 if __name__ == '__main__':
-    # export_newsletter_data(newsletter_url=NEWSLETTER_URL)
-    export_posts_cleaned_text(
-        raw_database_name='All posts',
-        target_database_name='MLAU cleaned text'
+    # export_newsletter_data(NEWSLETTER_URL)
+
+    export_filtered_category_data(
+        category_name='Technology',
+        query='machine learning',
+        limit=1
     )
+
+    # export_posts_cleaned_text(
+    #     raw_database_name='All posts',
+    #     target_database_name='MLAU cleaned text'
+    # )
