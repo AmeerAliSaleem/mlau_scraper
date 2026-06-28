@@ -101,7 +101,7 @@ def save_to_supabase(
             .execute()
         )
 
-    logger.info(f'Successfully saved records to Supabase')
+    logger.info('Successfully saved records to Supabase')
 
 if __name__ == '__main__':
     get_supabase_client()

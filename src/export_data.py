@@ -4,18 +4,17 @@ import datetime
 import pandas as pd
 import json
 
-from substack_api import Post, Newsletter, Category
+from substack_api import Category
 from substack_client import (load_newsletter_data, newsletters_to_df,
                              filter_newsletters_in_category, posts_to_df)
 from text_processing import filter_post_html, clean_text
-from database import access_supabase_data, save_to_supabase, clear_supabase
-from settings import NEWSLETTER_URL, STRINGS_TO_REMOVE
+from database import access_supabase_data, save_to_supabase
+from settings import STRINGS_TO_REMOVE, NEWSLETTER_URL
 
 # TODO
-# - Check that export_newsletter_data() still works after making small change to posts_to_df().
+# - Check that export_filtered_category_data() exports to both tables correctly.
 #     - Need to fix issue with duplicates in machine_learning_posts.
 #     - Apparently duplicated IDs in the same invocation of save_to_supabase()
-# - Check that export_filtered_category_data() exports to both tables correctly.
 # - New table of ML posts related to each ML newsletter.
 # - Function to search all newsletters in a category, returning only the ones related to ML, AI, etc.
 
@@ -31,7 +30,7 @@ def json_serialisable(obj):
 
     return obj
 
-def export_newsletter_data(newsletter_url: str) -> None:
+def export_newsletter_data(newsletter_url: str=NEWSLETTER_URL) -> None:
     """
     A function to scrape Substack data and store the results in Supabase.
     """
@@ -119,7 +118,7 @@ def export_filtered_category_data(
     category = Category(category_name)
 
     filtered_newsletters, newsletter_to_posts = filter_newsletters_in_category(
-        newsletter_category=category,
+        category=category,
         query=query,
         limit=limit
     )
@@ -155,8 +154,8 @@ def export_filtered_category_data(
         upsert=True
     )
 
-if __name__ == '__main__':
-    # export_newsletter_data(NEWSLETTER_URL)
+# if __name__ == '__main__':
+#     export_newsletter_data(NEWSLETTER_URL)
 
     export_filtered_category_data(
         category_name='Technology',

@@ -3,17 +3,12 @@
 import numpy as np
 import pandas as pd
 
-from substack_api import Post
-from text_processing import filter_post_html, clean_text
-from settings import STRINGS_TO_REMOVE
 
-from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 
 import plotly.express as px
 
-from text_processing import vectorise_text
 
 class DBSCAN_model:
     def __init__(self, posts, vectorised_data, model_params):

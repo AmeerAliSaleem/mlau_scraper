@@ -1,7 +1,6 @@
 """Tests for database functions."""
 
 from unittest.mock import MagicMock, patch
-import pytest
 
 from src.database import get_supabase_client
 

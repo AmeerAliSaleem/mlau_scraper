@@ -24,7 +24,7 @@ def load_newsletter_data(newsletter_url: str) -> list[Post]:
 
 def newsletters_to_df(newsletters_metadata: list[dict]) -> pd.DataFrame:
     """
-    Takes a list of newsletter metadata (all usually under a common newsletter_category) and:
+    Takes a list of newsletter metadata (all usually under a common category) and:
     - Sorts the newsletters in descending subscriber order
     - Extracts useful statistics from the given list of newsletters
     - Returns the result as a DataFrame.
@@ -69,17 +69,17 @@ def newsletters_to_df(newsletters_metadata: list[dict]) -> pd.DataFrame:
     return top_newsletters_df
 
 def filter_newsletters_in_category(
-        newsletter_category: Category,
+        category: Category,
         query: str,
         limit: int=10,
 ) -> tuple[list[dict], dict[Newsletter, list[Post]]]:
     """
-    Searches the newsletter_category for newsletters filtered by the given query.
+    Searches the category for newsletters filtered by the given query.
 
     Parameters
     ----------
-    newsletter_category: Category
-        The newsletter newsletter_category to filter.
+    category: Category
+        The newsletter category to filter.
     query: str
         The (non-Regex) search query.
     limit: int, optional
@@ -94,9 +94,9 @@ def filter_newsletters_in_category(
         with the values corresponding to the list of posts matching the query.
     """
     # Filter out invite-only publications to prevent HTTP 403 error
-    category_metadata = newsletter_category.get_newsletter_metadata()
+    category_metadata = category.get_newsletter_metadata()
     category_metadata = [
-        newsletter for newsletter in category_metadata if newsletter['invite_only']==False
+        newsletter for newsletter in category_metadata if not newsletter['invite_only']
     ]
     category_metadata = category_metadata[:limit]
 
@@ -112,7 +112,7 @@ def filter_newsletters_in_category(
 
             newsletter_to_posts_dict[newsletter] = filtered_posts
 
-    # Filter newsletter_category metadata based on query results
+    # Filter category metadata based on query results
     filtered_newsletters = list(
         filter(lambda n: n['base_url'] in filtered_newsletter_urls, category_metadata)
     )

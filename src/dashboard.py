@@ -5,13 +5,12 @@ from collections import Counter
 import numpy as np
 import pandas as pd
 
-from substack_api import Newsletter, Category
+from substack_api import Category
 from database import access_supabase_data, supabase_to_df
 from settings import STRINGS_TO_REMOVE
 from clustering import cluster_text_and_report
 
 # Project files
-from substack_client import newsletters_to_df, posts_to_df
 from text_processing import filter_post_html, clean_text, vectorise_text
 
 # Plotting
@@ -133,7 +132,7 @@ def post_eda(post_html: str):
     st.plotly_chart(fig)
 
 def run_dashboard() -> None:
-    st.title("📦 Machine Learning Algorithms Unpacked 📦")
+    st.title("📦 Insights on the Machine Learning Algorithms Unpacked Newsletter 📦")
 
     personal_tab, others_tab = st.tabs(['Personal', 'Other'])
 
