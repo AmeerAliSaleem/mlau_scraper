@@ -7,7 +7,7 @@ commands:
     steps:
       - checkout
       - python/install-packages:
-        pkg-manager: uv
+          pkg-manager: uv
 
 jobs:
   lint:
@@ -15,17 +15,17 @@ jobs:
       name: python/default
       tag: '3.14'
     steps:
-        install-project
-          - run:
-          name: Run linting with ruff
-          command: uv run ruff check src tests
+        - install-project
+        - run:
+            name: Run linting with ruff
+            command: uv run ruff check src tests
 
   test:
     executor:
       name: python/default
       tag: '3.14'
     steps:
-      install-project
+      - install-project
       - run:
           name: Run tests with Pytest
           command: uv run pytest
