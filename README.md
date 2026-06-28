@@ -1,4 +1,9 @@
 # mlau_scraper
+
+Current build status (via CircleCI):
+
+[![CircleCI](https://dl.circleci.com/status-badge/img/circleci/JBgmi7TTaucEpa7BcKTbDS/SE6taGMQh95prYoW5ScJ2h/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/circleci/JBgmi7TTaucEpa7BcKTbDS/SE6taGMQh95prYoW5ScJ2h/tree/main)
+
 A tool to extract insights from my [Machine Learning Algorithms Unpacked publication](https://ameersaleem.substack.com/), with the aim of exploring what content resonates with the audience, what doesn't, and recommendations on future topics that I should write about.
 
 The dashboard is live on Streamlit Community Cloud, linked [here](https://mlau-analysis.streamlit.app/).
@@ -52,6 +57,3 @@ To run the webapp locally, assuming uv is installed:
 - Continuous Deployment w/ GitHub Actions. This would involve calling the functions in `export_data.py` every week to update my newest Substack post and those of other ML-related newsletters.
 - Testing (PyTest)
 - MLOps for DBSCAN
-
-Current build status:
-[![CircleCI](https://dl.circleci.com/status-badge/img/circleci/JBgmi7TTaucEpa7BcKTbDS/SE6taGMQh95prYoW5ScJ2h/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/circleci/JBgmi7TTaucEpa7BcKTbDS/SE6taGMQh95prYoW5ScJ2h/tree/main)
