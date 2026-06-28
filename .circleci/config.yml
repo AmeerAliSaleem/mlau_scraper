@@ -1,0 +1,37 @@
+version: '2.1'
+orbs:
+  python: circleci/python@4.0.0
+
+commands:
+  install-project:
+    steps:
+      - checkout
+      - python/install-packages:
+        pkg-manager: uv
+
+jobs:
+  lint:
+    executor:
+      name: python/default
+      tag: '3.14'
+    steps:
+        install-project
+          - run:
+          name: Run linting with ruff
+          command: uv run ruff check src tests
+
+  test:
+    executor:
+      name: python/default
+      tag: '3.14'
+    steps:
+      install-project
+      - run:
+          name: Run tests with Pytest
+          command: uv run pytest
+
+workflows:
+  ci:
+    jobs:
+      - lint
+      - test

@@ -72,7 +72,7 @@ def filter_newsletters_in_category(
         category: Category,
         query: str,
         limit: int=10,
-):
+) -> tuple[list[dict], dict[Newsletter, list[Post]]]:
     """
     Searches the category for newsletters filtered by the given query.
 
@@ -87,31 +87,37 @@ def filter_newsletters_in_category(
     
     Returns
     ----------
-    filtered_newsletters: list[dict]
-        The newsletters filtered from the query. NB the list is not sorted.
+    tuple[list[dict], dict[Newsletter, list[Post]]]
+        A tuple containing:
+        The metadata of each newsletter in a dictionary
+        A separate dictionary whose keys correspond to newsletters,
+        with the values corresponding to the list of posts matching the query.
     """
     # Filter out invite-only publications to prevent HTTP 403 error
     category_metadata = category.get_newsletter_metadata()
     category_metadata = [
-        newsletter for newsletter in category_metadata if newsletter['invite_only']==False
+        newsletter for newsletter in category_metadata if not newsletter['invite_only']
     ]
     category_metadata = category_metadata[:limit]
 
     filtered_newsletter_urls = []
+    newsletter_to_posts_dict = {}
     for newsletter_dict in category_metadata:
-        url = newsletter_dict['base_url']
-        newsletter = Newsletter(url=url)
+        newsletter_url = newsletter_dict['base_url']
+        newsletter = Newsletter(url=newsletter_url)
         filtered_posts = newsletter.search_posts(query=query)
 
         if filtered_posts:
-            filtered_newsletter_urls.append(url)
+            filtered_newsletter_urls.append(newsletter_url)
+
+            newsletter_to_posts_dict[newsletter] = filtered_posts
 
     # Filter category metadata based on query results
     filtered_newsletters = list(
         filter(lambda n: n['base_url'] in filtered_newsletter_urls, category_metadata)
     )
 
-    return filtered_newsletters
+    return filtered_newsletters, newsletter_to_posts_dict
 
 def posts_to_df(posts: list[Post]) -> pd.DataFrame:
     """
@@ -131,6 +137,7 @@ def posts_to_df(posts: list[Post]) -> pd.DataFrame:
     posts_stats = [
         {
             'id': metadata['id'],
+            'Newsletter id': metadata['publication_id'],
             'Title': metadata['title'],
             'URL': metadata['canonical_url'],
             'Date of upload': pd.to_datetime(metadata['post_date']),
@@ -146,3 +153,12 @@ def posts_to_df(posts: list[Post]) -> pd.DataFrame:
     posts_stats_df = pd.DataFrame(posts_stats)
 
     return posts_stats_df
+
+if __name__ == '__main__':
+    category = Category('Technology')
+    filtered_newsletters = filter_newsletters_in_category(
+        category,
+        'machine learning',
+        limit=10
+    )
+    print()
