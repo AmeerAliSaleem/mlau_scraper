@@ -54,4 +54,4 @@ To run the webapp locally, assuming uv is installed:
 - MLOps for DBSCAN
 
 Current build status:
-[https://circleci.com/gh/CIRCLECI-GWP/python_app.svg?style=svg](https://circleci.com/gh/CIRCLECI-GWP/python_app){: target="_blank"}
+[![CircleCI](https://dl.circleci.com/status-badge/img/circleci/JBgmi7TTaucEpa7BcKTbDS/SE6taGMQh95prYoW5ScJ2h/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/circleci/JBgmi7TTaucEpa7BcKTbDS/SE6taGMQh95prYoW5ScJ2h/tree/main)
