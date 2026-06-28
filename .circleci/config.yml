@@ -16,7 +16,7 @@ jobs:
       tag: '3.14'
     steps:
         install-project
-          - run:
+        - run:
           name: Run linting with ruff
           command: uv run ruff check src tests
 
