@@ -52,3 +52,6 @@ To run the webapp locally, assuming uv is installed:
 - Continuous Deployment w/ GitHub Actions. This would involve calling the functions in `export_data.py` every week to update my newest Substack post and those of other ML-related newsletters.
 - Testing (PyTest)
 - MLOps for DBSCAN
+
+Current build status:
+[https://circleci.com/gh/CIRCLECI-GWP/python_app.svg?style=svg](https://circleci.com/gh/CIRCLECI-GWP/python_app){: target="_blank"}
