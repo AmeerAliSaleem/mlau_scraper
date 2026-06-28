@@ -41,6 +41,10 @@ To run the webapp locally, assuming uv is installed:
     ```commandline
     streamlit run src/dashboard.py
     ```
+  or, with Make installed, you can instead use
+  ```commandline
+  make dashboard
+  ```
 
 # To Develop
 - Step 4
