@@ -71,7 +71,8 @@ def newsletters_to_df(newsletters_metadata: list[dict]) -> pd.DataFrame:
 def filter_newsletters_in_category(
         category: Category,
         query: str,
-        limit: int=10,
+        newsletter_limit: int=10,
+        post_limit: int=1
 ) -> tuple[list[dict], dict[Newsletter, list[Post]]]:
     """
     Searches the category for newsletters filtered by the given query.
@@ -82,8 +83,11 @@ def filter_newsletters_in_category(
         The newsletter category to filter.
     query: str
         The (non-Regex) search query.
-    limit: int, optional
+    newsletter_limit: int, optional
         The maximum number of newsletters to search the posts of. Default is 10.
+    post_limit: int, optional
+        The maximum number of query-relevant posts to return for each newsletter.
+        Default is 1, the case where we just want to flag ML-related newsletters to handle the posts separately.
     
     Returns
     ----------
@@ -98,14 +102,14 @@ def filter_newsletters_in_category(
     category_metadata = [
         newsletter for newsletter in category_metadata if not newsletter['invite_only']
     ]
-    category_metadata = category_metadata[:limit]
+    category_metadata = category_metadata[:newsletter_limit]
 
     filtered_newsletter_urls = []
     newsletter_to_posts_dict = {}
     for newsletter_dict in category_metadata:
         newsletter_url = newsletter_dict['base_url']
         newsletter = Newsletter(url=newsletter_url)
-        filtered_posts = newsletter.search_posts(query=query)
+        filtered_posts = newsletter.search_posts(query=query, limit=post_limit)
 
         if filtered_posts:
             filtered_newsletter_urls.append(newsletter_url)
@@ -153,12 +157,3 @@ def posts_to_df(posts: list[Post]) -> pd.DataFrame:
     posts_stats_df = pd.DataFrame(posts_stats)
 
     return posts_stats_df
-
-if __name__ == '__main__':
-    category = Category('Technology')
-    filtered_newsletters = filter_newsletters_in_category(
-        category,
-        'machine learning',
-        limit=10
-    )
-    print()
