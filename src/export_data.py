@@ -8,7 +8,7 @@ from substack_api import Category, Newsletter
 from substack_client import (load_newsletter_data, newsletters_to_df,
                              filter_newsletters_in_category, posts_to_df)
 from text_processing import filter_post_html, clean_text
-from database import supabase_to_df, access_supabase_data, save_to_supabase
+from database import supabase_to_df, save_to_supabase
 from settings import STRINGS_TO_REMOVE, NEWSLETTER_URL
 
 # TODO
