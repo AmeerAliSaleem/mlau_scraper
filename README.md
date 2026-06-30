@@ -53,7 +53,6 @@ To run the webapp locally, assuming uv is installed:
 
 # To Develop
 - Step 4
-- Continuous Integration with CircleCI, e.g. linting
 - Continuous Deployment w/ GitHub Actions. This would involve calling the functions in `export_data.py` every week to update my newest Substack post and those of other ML-related newsletters.
-- Testing (PyTest)
-- MLOps for DBSCAN
+- Complete testing functions in the 'tests' folder
+- MLOps for DBSCAN/extension to HDBSCAN
