@@ -1,0 +1,26 @@
+name: Export API Data
+
+on:
+  schedule:
+    # Run every Monday at 9:00am UTC
+    - cron: 0 9 * * 1
+  workflow_dispatch: # To trigger manually from GitHub
+
+jobs:
+  export_api_data:
+    name: python
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.21" # project's uv version
+
+      - name: Install the project
+        run: uv sync --locked --all-extras --dev
+
+      - name: Export data
+        run: uv run python -m src.export_data
